@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>HEXOR II</title>
+    <link rel="stylesheet" type="text/css" href="style.css">
+
+</head>
+<body>
+    <div class="menu-bar" id="battery">
+        <div class="dropdown">
+            <a id="a1">Tlaèítko 1</a>
+            <div class="dropdown-content">
+                <a href="#">Položka 1-1</a>
+                <a href="#">Položka 1-2</a>
+                <a href="#">Položka 1-3</a>
+            </div>
+        </div>
+        <div class="dropdown">
+            <a>Tlaèítko 2</a>
+            <div class="dropdown-content">
+                <a href="#">Položka 2-1</a>
+                <a href="#">Položka 2-2</a>
+                <a href="#">Položka 2-3</a>
+            </div>
+        </div>
+        <div class="dropdown">
+            <a>Tlaèítko 3</a>
+            <div class="dropdown-content">
+                <a href="#">Položka 3-1</a>
+                <a href="#">Položka 3-2</a>
+                <a href="#">Položka 3-3</a>
+            </div>
+        </div>
+        <div class="dropdown">
+            <a>Tlaèítko 4</a>
+            <div class="dropdown-content">
+                <a href="#">Položka 3-1</a>
+                <a href="#">Položka 3-2</a>
+                <a href="#">Položka 3-3</a>
+            </div>
+        </div>
+    </div>
+    <div id="content">
+        <div id="column1">
+            <div id="column1-top">
+                <h2>Pohyb</h2>
+                <div class="switchMoveMode">                    
+                    <a href="javascript:void(0)" id="MMtail">ocas</a>
+                    <a href="javascript:void(0)" id="MMrobot">robot</a> 
+                </div>  
+                <div id="dirBtns">
+                    <div class="colBTNS" id="dirButton1"></div>
+                    <div class="colBTNS" id="dirButton2"></div>
+                    <div class="colBTNS" id="dirButton3"></div>
+                    <div class="colBTNS" id="dirButton4"></div>
+                    <div class="colBTNS" id="dirButton5"></div>
+                    <div class="colBTNS" id="dirButton6"></div>
+                    <div class="colBTNS" id="dirButton7"></div>
+                    <div class="colBTNS" id="dirButton8"></div>
+                    <div class="colBTNS" id="dirButton9"></div>
+                </div>
+            </div> 
+           
+            <div id="divider1"></div>
+            <div id="column1-bottom">
+                <h2>Stav</h2>
+                <div class="stateDiv"><p>Souøadnice:  x , y , rot [cm, cm, deg] </p></div>
+                <div class="stateDiv"><p id="koordsAct">Robot: 132, 135, 90  </p></div>
+                <div class="stateDiv"><p id="koordsGoal">Cíl: 132, 135  </p></div>
+                <div class="stateDiv"><p id="objGoal">newObj: 132, 135  </p></div>
+                <div class="stateDiv">
+                    <p>Path stepping: </p> 
+                    <p>en:
+                        <input type="checkbox" id="skipRedraw" style="width:1.5vh;height:1.5vh;">
+                    </p>
+                    <input type="button" id="drawPoint" value="draw point">
+                    <p>PathIdx:
+                        <input type="number" id="idxInPath" style="width: 30px">
+                    </p>
+                    <p id="pathLength"></p>
+                    <input type="button" id="resetIdx" value="reset Idx">
+                </div>
+            </div>
+        </div>
+        <div id="divider"></div>
+        <div id="column2">
+            <h2>Mapa prostøedí</h2>    
+            <div class="switchMoveMode">
+                <a href="javascript:void(0)" id="moveInMap">MOVE</a>
+                <a href="javascript:void(0)" id="endPointSel">END</a>
+                <a href="javascript:void(0)" id="drawObject">DRAW</a>
+                <a href="javascript:void(0)" id="infoInMap">INFO</a>
+            </div>
+            <div class="map-container">
+                <canvas id="map" width="800" height="600"></canvas>
+            </div> 
+            <p style="display:flex" id="mPos"></p>
+            <p id="mapZero"></p>
+        </div>
+    </div>
+
+    <script src="indexJS.js"></script>
+    <script src="mapScript.js"></script>
+<footer><p id="DeviceConnected">Pøipojeno k:</p> <p id="lastComm">Poslední komunikace s robotem pøed x s</p> <p id="lastCommand">Poslední povel:  </p>
+    
+    </footer>
+</body>
+
+</html>
