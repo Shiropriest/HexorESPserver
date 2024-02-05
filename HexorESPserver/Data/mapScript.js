@@ -1,4 +1,4 @@
-document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", () => {
     /* Script that takes care of canvas map 
      * made by: Tomáš Hmiro
      * 31. 01. 2024 
@@ -15,7 +15,10 @@ document.addEventListener("DOMContentLoaded", function () {
      * 8) in all modes operator can move around by (wheel draging), zoom (wheel scroll +-)
      * 9) page is optimized on PC and may be tested on mobile phone (Android)
      * 
-     * xy) TODO info button -> color legend & more
+     * TODO:
+     * 1) info button -> color legend & more
+     * 2) saving map to cookies or other temp PC/phone memmory
+     * 3) 
      */
 
     //DOM objects
@@ -27,6 +30,8 @@ document.addEventListener("DOMContentLoaded", function () {
     const infoBut = document.getElementById("infoInMap");
     const skipDraw = document.getElementById("skipRedraw");
     const drawPoint = document.getElementById("drawPoint");
+    const dirBtns = [];
+    const downSizing = 10;
     let tim; //ID of timer inteval to draw map changes of client actions
 
     //Constants
@@ -59,7 +64,7 @@ document.addEventListener("DOMContentLoaded", function () {
     //Map define
     let mapImageH, mapImageW; //size of map defined by user or
     //binary represantation of map in string recieved from ESP server 
-    let img;
+    let img, genMesh = false, pathGenerated = false;
 
     //debugging purpose variables:
     let runningOnServer = false;
@@ -69,12 +74,26 @@ document.addEventListener("DOMContentLoaded", function () {
     const pathLength = document.getElementById("pathLength");
     const resetIdx = document.getElementById("resetIdx");
 
+    //# in setKeys array for setting a keybinding TODO - share with page JS
+    const forward = 0,
+        back = 1,
+        left = 2,
+        right = 3,
+        stop = 4,
+        mode1 = 5, //teleoprator
+        mode2 = 6, //semiauto
+        mode3 = 7, //auto
+        mode4 = 8; //presentation
+
+    const setKeys = ['w', 's', 'a', 'd', ' ', 'g', 'h', 'j', 'k'];
+
     /*%ROS%*/ //if runnging on server this will be rewrited by preprocesor and be that set to TRUE (for offline debug purpose)
     /*%RS%*/ //robot size based on program in ESP if connected to Robot
     let mapStringArray;
     if (!runningOnServer) {
         mapStringArray = "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000110000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001111111000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001110011111000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000100000001110000000000000000000000001111000000000000000000000000000000000000000000000000000000000000010000000011100000000000000000000001111111111000000000000000000000000000000000000000000000000000000001000000000110000000000000000000000111101111111000000000000000000000000000000000000000000000000000000110000000011000000000000000000000011110001111110000000000000000000000000000000000000000000000000000001100000001100000000000000000000001110000000111000000000000000000000000000000000000000000000000000000111100001100000000000000000000000111000000001110000000000000000000000000000000000000000000000000000000111111100000000000000000000000011100000000111000000000000000000000000000000000000000000000000000000000000000000000000000000000000001110000000011000000000000000000000000000000000000000000000000000000000000000000000000000000000000000011100000011000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000111111111000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000111110000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000011110000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000011111000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001111111110000000000000000000000000000000000000000000000000000000000000000000000000000000000000000011110000011100000000000000000000000000000000000000000000000000000000000000000000000000000000000011111000000001111000000000000000000000000000000000000000000000000000000000000000000000000000000000111110000000000011110000000000000000000000000000000000000000000000000000000000000000000000000000001111100000000000000011100000000000000000000000000000000000000000000000000000000000000000000000000011111100000000000000000110000000000000000000000000000000000000000000000000000000000000000000000000111110000000000000000000011100000000000000000000000000000000000000000000000000000000000000000000001111100000000000000000000000111000000000000000000000000000000000000000000000000000000000000000000011111100000000000000000000000001110000000000000000000000000000000000000000000000000000000000000000011111000000000000000000000000000011000000000000000000000000000000000000000000000000000000000000000111110000000000000000000000000000001110000000000000000000000000000000000000000000000000000000000000111110000000000000000000000000000000011100000000000000000000000000000000000000000000000000000000000011110000000000000000000000000000000011111000000000000000000000000000000000000000000000000000000000001111000000000000000000000000000000011111000000000000000000000000000000000000000000000000000000000000011100000000000000000000000000000111110000000000000000000000000000000000000000000000000000000000000001110000000000000000000000000001111100000000000000000000000000000000000000000000000000000000000000000011100000000000000000000000011111000000000000000000000000000000000000000000000000000000000000000000001111100000000000000000000111110000000000000000000000000000000000000000000000000000000000000000000000011111000000000000000001111100000000000000000000000000000000000000000000000000000000000000000000000000111110000000000000011110000000000000000000000000000000000000000000000000000000000000000000000000000011111100000000001111100000000000000000000000000000000000000000000000000000000000000000000000000000000111110000000111111000000000000000000000000000000000000000000000000000000000000000000000000000000000001111100001111110000000000000000000000000000000000000000000000000000000000000000000000000000000000000011110000111000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000111111110000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000011111110000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000111100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000011000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001110000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000111111100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000011111111110000000000000000000000000000000000000000000000000000000000000000000000000000000000000001111111111111100000000000000000000000000000000000000000000000000000000000000000000000000000000000111111111111111111000000000000000000000000000000000000000000000000000000000000000000000000000000111111111111111001111100000000000000000000000000000000000000000000000000000000000000000000000000011111111111111100000011111000000000000000000000000000000000000000000000000000000000000000000000011111111111111000000000001111110000000000000000000000000000000000000000000000000000000000000000000111111111111000000000000000011111100000000000000000000000000000000000000000000000000000000000000111111111111000000000000000000000111111000000000000000000000000000000000000000000000000000011111111111111111100000000000000000000000001111110000000000000000000000000000000000000100000011111111111111111111100000000000000000000000000000111111000000000000000000000000000000000000011111111111111111111111100000000000000000000000000000000001111110000000000000000000000000000000000011111111111111111111000000000000000000000000000000000000000001111100000000000000000000000000000000001111111111111000000000000000000000000000000000000000000000000011111000000000000000000000000000000000111100000000000000000000000000000000000000000000000000000000000111110000000000000000000000000000000011110000000000000000000000000000000000000000000000000000000000001111100000000000000000000000000000001111000000000000000000000000000000000000000000000000000000000000001111000000000000000000000000000000111110000000000000000000000000000000000000000000000000000000000000011100000000000000000000000000000001111000000000000000000000000000000000000000000000000000000000000000011000000000000000000000000000000111100000000000000000000000000000000000000000000000000000000000000001110000000000000000000000000000001111000000000000000000000000000000000000000000000000000000000000000011100000000000000000000000000000011100000000000000000000000000000000000000000000000000000000000000001111000000000000000000000000001111111000000000000000000000000000000000000000000000000000000000000000011100000000000000000000001111111011100000000000000000000000000000000000000000000011111111111111111111111000000000000000000000100000001111000000000000000000000000000000000000000111111111111111111111111111100000000000000000000000000000011110000000000000000000000000000000111111111111111111111111111111111111000000000000000000000000000001111000000000000000001111111111111111111111111111000000011111111111111100000000000000000000000000000111110000000011111111111111111111111111111000000000000000000000000000000000000000000000000000000000001111111111111111111111111111111110000000000000000000000000000000000000000000000000000000000000000000011111111111111111111111000000000000000000000000000000000000000000000000000000000000000000000000000001111111111111110000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
 
+        scripInit();
         mapEnvSet(); //first call on load running without server
     } else {
         //ask for map 
@@ -283,6 +302,53 @@ document.addEventListener("DOMContentLoaded", function () {
         idxInPath.value = drawPathIdx;
     });
 
+    document.addEventListener("keypress", (e) => {
+        let BtnRobot = document.getElementById("MMrobot");
+        a = BtnRobot.style.backgroundColor;
+        if (!runningOnServer && a == "rgb(35, 255, 1)") {
+            let mDirection = -1;
+                switch (e.key) {
+                    case setKeys[left]:
+                        console.log('left');
+                        mDirection = 3;
+                        break;
+                    case setKeys[back]:
+                        console.log('back');
+                        mDirection = 7;
+                        break;
+                    case setKeys[right]:
+                        console.log('right');
+                        mDirection = 5;
+                        break;
+                    case setKeys[forward]:
+                        console.log('fwd');
+                        mDirection = 1;
+                        break;
+                    case setKeys[stop]:
+                        console.log('stop');
+
+                        break;
+                    case setKeys[mode1]:
+                        console.log('mode1');
+
+                        break;
+                    case setKeys[mode2]:
+                        console.log('mode2');
+
+                        break;
+                    case setKeys[mode3]:
+                        console.log('mode3');
+
+                        break;
+                    case setKeys[mode4]:
+                        console.log('mode4');
+                        break;
+                    default:
+                        break;
+            }
+            moveRobot(e, mDirection);
+        }
+    });
 
     //FUNCTIONS ------------------------------------------------------------------------------------------------------------------
     function draw() {
@@ -313,6 +379,7 @@ document.addEventListener("DOMContentLoaded", function () {
         Goal.innerHTML = "Cíl: ";
         Goal.innerHTML += Target.en ? "" + Math.round(Target.x) + ", " + Math.round(Target.y) : "Nezvolen";
         idxInPath.value = drawPathIdx;
+        let path1 = [];
 
         if (Target.en) {
             DrawTarget();            
@@ -326,10 +393,12 @@ document.addEventListener("DOMContentLoaded", function () {
                 pathGenerated = false;
                 Target.change = false;
                 Robot.change = false;
-                newTryOutPoints = [];
-                let res, res1;
+                v = 0;
+                //newTryOutPoints = [];
+                let res = [], res1 = [];
                 try {
                     res = generatePath([Robot.x, Robot.y, 0], [Target.x, Target.y, 0], 0) //AP, GP, len, limit;
+                    clearMap();
                 }
                 catch (err) {
                     console.log(err.message);
@@ -337,6 +406,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
                 try {
                     res1 = generatePath([Target.x, Target.y, 0], [Robot.x, Robot.y, 0], 0);
+                    clearMap();
                 }
                 catch (err) {
                     console.log(err.message);
@@ -347,35 +417,55 @@ document.addEventListener("DOMContentLoaded", function () {
                     v = res[0];
                     path = flipArray(res[1]);
                 }
-                else if(res1[0] > 0){
+                else if (res1[0] > 0) {
                     v = res1[0];
                     path = res1[1];
                 }
-                else{
-                    //because JS restricts too deep recursive calls lets try finding a way from "unsuccessful" path points
-                    DrawPath(newTryOutPoints.length, newTryOutPoints, "#0000FF");
-                    let resultTable = [], trIdx = 0; //PC is fast enought so lets try all :)
-                    for (let i = 0; i < newTryOutPoints.length; i++) {
-                        res = generatePath(newTryOutPoints[i], [Target.x, Target.y, 0], 0);
-                        if (res[0] > 0) {
-                            resultTable[trIdx++] = [res[0],res[1]];
-                        }
-                    }
-                    //find min in result table
-                    trIdx = 0;
-                    if (resultTable.length > 0) {
-                        let lastMin = resultTable[0][0];
-                        for (let i = 0; i < resultTable.length; i++) {
-                            if (resultTable[i][0] < lastMin) {
-                                lastMin = resultTable[i][0];
-                                trIdx = i;
+                else if (res[0] < 0 && res1[0] < 0) {
+                    //trying point mesh pathfinding
+                    /* in mesh made by 10*smaller map (every 10x10 pixels there is one point)
+                     * finding path in this setup by vector simplyfication
+                     * if there is path between two points selected by rounding direction vector between start & target 
+                     * 
+                     * 
+                     */
+                    try {                         
+                        let r1 = [], r2 = [], po = [], pointMesh = [], arrayOfGenPaths = [], k = 0;                 //[x,y, basic validity]
+                        for (let i = downSizing; i < mapImageH; i += downSizing) {
+                            for (let j = downSizing; j < mapImageW; j += downSizing) {
+                                po = [j, i, 0];
+                                r1 = generatePath(po, [Target.x, Target.y], 0);                                     //point from mesh to end
+                                clearMap();                                    
+                                r2 = generatePath([Robot.x, Robot.y], po, 0);                                       //from robot to mesh point
+                                if (r1[0] > 0 && r2[0] > 0) {
+                                    //DrawPath(r1[1].length, r1[1], "#70ff00");
+                                    //only if there is point from which we can get to end we check that we can get from start to the mesh point                                
+                                    arrayOfGenPaths[k++] = pathJoin(r2[1], r1[1]);
+                                    DrawPath(r2[1].length, r2[1], "#70ff00");
+                                    
+                                }
                             }
                         }
-                    } 
-                    //there is still posibility to fail but ... (eShrug)
-                    DrawPath(newTryOutPoints.length, newTryOutPoints, "#0000FF");
-                    v = resultTable[trIdx][0];
-                    path = resultTable[trIdx][1];                    
+                        let p = (mapImageW * mapImageH)**2, idx = 0;
+                        for (let i = 0; i < arrayOfGenPaths.length; i++) {
+                            if (arrayOfGenPaths[i][0] < p && arrayOfGenPaths[i][0] > 0) {
+                                idx = i;
+                                p = arrayOfGenPaths[i][0];
+                            }
+                        }
+                        v = arrayOfGenPaths[idx][0];
+                        path = arrayOfGenPaths[idx][1];
+                    }
+                    catch (err) {
+                        console.log(err.message);
+                        v = -1; path = [0];
+                    }
+                    //finding shortes combined path
+                    
+                }
+                else {
+                    v = res[0];
+                    path = flipArray(res[1]);
                 }
 
                 Target.valid = v > 0 ? true : false;
@@ -383,19 +473,28 @@ document.addEventListener("DOMContentLoaded", function () {
                 v = res[0];
                 path = res[1];
 
-                //DrawPath(v, path);
+                path = pathJoin([[Robot.x, Robot.y, 1]], path);
+                path = pathJoin(path, [[Target.x, Target.y, 1]]);
+
+                DrawPath(v, path, "#FF00FF");
 
                 res = optimizePath(v, path, pathDirection, [Robot.x, Robot.y], [Target.x, Target.y]);
+                //res = optimizePath(res[0], res[1], pathDirection, [Robot.x, Robot.y], [Target.x, Target.y]);
                 v = res[0];
                 path = res[1];
-                pathGenerated = true;
+                pathGenerated = v > 0 ? true : false;
                 //DrawPath(res1[0], res1[1], "#FF0000");
                 pathLength.innerHTML = v;
                 tim = setTimeout(draw, 200);
             }
             if (pathGenerated) {
                 DrawPath(v, path);
-            }            
+                //DrawPath(v, path, "#FF00FF");
+                
+            }
+            else {
+                console.log("Pathfinding failed!");
+            }
         }        
     };
 
@@ -405,10 +504,9 @@ document.addEventListener("DOMContentLoaded", function () {
         }
         context.fillStyle = Target.valid ? "#00FF00" : "#FF0000";
 
-
-        locX1 = (Target.x * Target.scaling.W) + startScrollX;
-        locY1 = (Target.y * Target.scaling.H) + startScrollY;
-        context.fillRect(locX1 - (Target.size * Target.scaling.W) / 2, locY1 - (Target.size * Target.scaling.H) / 2, Target.size * Target.scaling.W, Target.size * Target.scaling.H);
+        locX1 = (Target.x * scaleW) + startScrollX;
+        locY1 = (Target.y * scaleH) + startScrollY;
+        context.fillRect(locX1 - (Target.size * scaleW) / 2, locY1 - (Target.size * scaleH) / 2, Target.size * scaleW, Target.size * scaleH);
         //if (path.evailable) {
         //    drawPath();
         //}
@@ -421,9 +519,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
         context.fillStyle = Robot.valid ? "#f89b06" : "#FF0000";
 
-        locX1 = (Robot.x * Robot.scaling.W) + startScrollX;
-        locY1 = (Robot.y * Target.scaling.H) + startScrollY;
-        context.fillRect(locX1 - (Robot.size * Robot.scaling.W) / 2, locY1 - (Robot.size * Robot.scaling.H) / 2, Robot.size * Robot.scaling.W, Robot.size * Robot.scaling.H);
+        locX1 = (Robot.x * scaleW) + startScrollX;
+        locY1 = (Robot.y * scaleH) + startScrollY;
+        context.fillRect(locX1 - (Robot.size * scaleW) / 2, locY1 - (Robot.size * scaleH) / 2, Robot.size * scaleW, Robot.size * scaleH);
 
         let rob = document.getElementById("koordsAct");
         rob.innerHTML = "Robot: " + + locX2 + ", " + locY2 + ", ?";
@@ -483,7 +581,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     color = "#565656";
                     break;
                 case 3:
-                    color = "#ffffff";
+                    color = "#0f0f0f";
                 default:
                     color = "#f0f0f0";
                     break;
@@ -623,13 +721,23 @@ document.addEventListener("DOMContentLoaded", function () {
         let res = [];
         let vPath = [];
         let lastRes = mapImageH * mapImageW;
-        let depth = d++;
+        let depth;
+        let preciseEnd = false;
+
+        if (d == undefined || d < 0) {
+            d = 1;
+        }
+        else {
+            depth = d++;
+        }
         
         //if () { return [-5, 0]; }
-        if (val == 1 || val == 2 || val == 3) {
+        if (val == 1 || val == 2)// || val == 3) 
+        {
             return [-1, 0]; // may be faster
         }
         if (AP[0] < 0 || AP[1] < 0 || AP[0] > mapImageW || AP[1] > mapImageH) {
+            //out of map exception
             return [-1, 0];
         }
         else if (AP[0] == GP[0] && AP[1] == GP[1]) { //probably never happens but in case :)
@@ -637,15 +745,15 @@ document.addEventListener("DOMContentLoaded", function () {
             vPath[value++] = AP;    
             return [value, vPath];
         }
-        else if (val == 0) {
-            if (depth % 200 == 0) { //every 50th steps of omnidirectional search safe a point
-                newTryOutPoints[newTryOutPoints.length] = AP;
-            }
-            img[AP[1] * mapImageW + AP[0]] = 3;
+        else if (val == 0) {     
+            // if AP is obstacle free we can continue finding a path from this point
+            //  if we can we can go directly from actual point to end
+            img[AP[1] * mapImageW + AP[0]] = 3;            
             let dir = [GP[0] - AP[0], GP[1] - AP[1]]; //direction vector
             let len = Math.round(Math.sqrt(dir[0] ** 2 + dir[1] ** 2), 1);
             let a = [dir[0] / Math.sqrt(dir[0] ** 2 + dir[1] ** 2), dir[1] / Math.sqrt(dir[0] ** 2 + dir[1] ** 2)]; //normalized direction vector
-            let result = followVector(a, AP, GP, len);
+            let result = [];
+            result = followVector(a, AP, GP, len);
             if (result[0] > 1) {
                 return [result[0] + 1, flipArray(result[1])];
             }
@@ -653,16 +761,17 @@ document.addEventListener("DOMContentLoaded", function () {
                 AP[1] = result[1][- result[0] - 1][1];
                 AP[0] = result[1][- result[0] - 1][0];
             }
-            
-            a = [Math.round(a[0]), Math.round(a[1])]; //rounded and normalized dir. vector
-            NP = [AP[0] + a[0], AP[1] + a[1], 0]; //next point on dir. vect.
+            //vector path get on obstacle continue trying other directions
+            a = [Math.round(a[0]), Math.round(a[1])]; //normalized and rounded dir. vector             
+            NP = [AP[0] + a[0], AP[1] + [1], 0]; //next point on dir. vect.   
             //drawAnyPoint(AP, "#FF0000"); //red at poiont of call;
+           
             res = generatePath(NP, GP, depth);
             if (res[0] > 0 ) {
                 vPath = res[1];
                 vPath[res[0]++] = AP;
                 return [res[0], vPath];
-            }
+            }            
             
             for (let i = 0; i < fid.length; i++) {                
                 let fi = (3.14 / 180) * fid[i];
@@ -672,11 +781,10 @@ document.addEventListener("DOMContentLoaded", function () {
                 NP[1] = AP[1] + Math.round(pos[1], 1);
                 NP[2] = 0;
                 res = generatePath(NP, GP, depth);
-
                 if (res[0] > 0) {
                     lastRes = res[0] - result[0];
-                    vPath = pathJoin(res[1], flipArray(result[1]));
-                    vPath = pathJoin(vPath, [AP]);
+                    vPath = pathJoin( res[1],[AP]);
+                    vPath = pathJoin(vPath,flipArray(result[1]));                    
                     return [vPath.length, vPath];                    
                 }
             }
@@ -686,7 +794,8 @@ document.addEventListener("DOMContentLoaded", function () {
         
     function followVector(a, SP, GP, len) {   
         /* follows the vector defined by GP - SP
-         * a - normalized direction vector
+         * a - normalized direction vector (used here as input because it is often used outside this function call so it can be just send and not calculated again)
+            TODO - posibility to calculate it inside (not so important!)
          * SP - start point
          * GP - goal point
          * len - maximal length of vector
@@ -704,7 +813,7 @@ document.addEventListener("DOMContentLoaded", function () {
          *       y.. y position
          *       value.. value of importance (def. = 0)  
          */
-        let  way = [[0],[0]];
+        let  way = [];
         for (let c = 0; c < len; c++) {
             let A = [], B = [];
             B[0] = SP[0] + (c + 1) * a[0];
@@ -731,14 +840,6 @@ document.addEventListener("DOMContentLoaded", function () {
         //return [-1, 0]; TODO test this. Did we ever run over the GP?
     }
 
-    function cleanMap() {
-        for (let r = 0; r < mapImageH; r++) {
-            for (let c = 0; c < mapImageW; c++) {
-                img[r * mapImageH + c] = img[r * mapImageH + c] == 3 ? 0 : img[r * mapImageH + c];
-            }
-        }
-    }
-
     function matrixMull(a, [m,n], b, [m1,n1]) {
         let c = [];
         c[0] = a[0] * b[0] + a[1] * b[1];
@@ -759,7 +860,7 @@ document.addEventListener("DOMContentLoaded", function () {
         way = pathJoin([startPoint], wayE);
         way = pathJoin(way, [goalPoint]);
 
-        let newWay = [[1,1,1]], tempNewWay = [];
+        let newWay = [[],[],[]], tempNewWay = [];
         let GP, SP, nextSPidx = 0; 
         for (let s = 0; s < way.length-1; s++) {//s ... start point
             SP = way[s];
@@ -815,6 +916,12 @@ document.addEventListener("DOMContentLoaded", function () {
         return arr;
     }
 
+    function clearMap() {
+        for (let i = 0; i < mapImageH * mapImageW; i++) {           
+            img[i] = img[i] == 3 ? 0 : img[i];
+        }
+    }
+
     function pathCheckCleanup(l, p) {
     let a = [], k = 0; 
     for (let i = 0; i < l; i++) {
@@ -852,218 +959,54 @@ document.addEventListener("DOMContentLoaded", function () {
         return im;
     }
 
-});
+    //functions for testing
+    function testingButtonMovement() {
 
+    }
 
-
-/*
-    function optimizePath(len, way, direction, startPoint, goalPoint) {//v1.0
-        if (len < 0) {
-            return [len, way]; //if path was not find by previous fcn
+    function scripInit() {
+        for (let i = 1; i < 10; i++) {
+            let btnName = "dirButton" + i;
+            dirBtns[i - 1] = document.getElementById(btnName);
+            dirBtns[i - 1].addEventListener("click", (e) => {
+                moveRobot(e, i - 1);
+            });
         }
+        
+    }
 
-        if (way[0][0] == goalPoint[0] && way[0][1] == goalPoint[1]) { // switch direction if shorter way has E->S direction
-            GP = startPoint;
-        }
-
-        let nextIdx = 0, ok = false, done = false, wayVect = [[0], [0]], newWay = [], newWayE = [], breakPoints = 0, SP;
-        newWay[0] = startPoint; newWayE[0] = startPoint;
-        for (let i = 0; i < len - 1; i++) { //for cycle for start point (looking point)
-            if (i > way.length || done || newWayE[i] == undefined) { 
-                //if startPoint's index is larger than path array, or smaller than map
-                break;
-            }
-            SP = newWayE[i];
-            ok = false;
-            for (let j = i+2; j < len; j++) {//for cycle for horizon point 
-                if (j < nextIdx) {
-                    //next index depends on last find horizon, so if next index is between last start point and horizon index is enlarged
-                    j = nextIdx + 1;
-                    continue;
-                }
-                if (j > len) {
+    function moveRobot(e, i) {
+        let BtnRobot = document.getElementById("MMrobot");
+        console.log(BtnRobot.style.backgroundColor);
+        if (!runningOnServer && BtnRobot.style.backgroundColor == "rgb(35, 255, 1)") {
+            switch (i) { //change Robot location by incrementing
+                case 0: //[-1,1] 
                     break;
-                }
-                let tGP = way[j];
-                let dir = [tGP[0] - SP[0], tGP[1] - SP[1]]; //direction vector
-                let a = [dir[0] / Math.sqrt(dir[0] ** 2 + dir[1] ** 2), dir[1] / Math.sqrt(dir[0] ** 2 + dir[1] ** 2)]; //normalized direction vector
-                ok = false;
-                for (let c = 0; c < mapImageW; c++) {
-                    let A = [],B = [];
-                    B = [startPoint[0] + (c+1) * a[0], startPoint[1] + (c+1) * a[1]];
-                    A = [Math.round(B[0], 1), Math.round(B[1], 1), 0];
-                    wayVect[c] = A;
-                    drawAnyPoint(A, "#FF0000");
-                    let val = img[A[1] * mapImageW + A[0]];
-                    if (val == 1 || val == 2) {
-                        ok = true;
-                        break;
-                    }
-                    else if (A[0] == tGP[0] && A[1] == tGP[1]) {
-                        wayVect[c][2] = 1; //pathValue at 
-                        newWay[i] = wayVect;
-                        newWayE[i + 1] = A;
-                        wayVect = [0,0,0];                        
-                        nextIdx = j;
-
-                        
-                        break;
-                    }
-                    else if (A[0] == goalPoint[0] && A[1] == goalPoint[1]) {
-                        newWay[i] = wayVect;
-                        done = true;
-                        break;
-                    }
-                }                
+                case 1: //[0,1]
+                    Robot.y--;
+                    break;
+                case 2: //[1,1]
+                    break;
+                case 3: //[-1,0]
+                    Robot.x--;
+                    break;
+                case 4: //[0,0] STOP!
+                    break;
+                case 5: //[1,0]
+                    Robot.x++;
+                    break;
+                case 6: //[-1,-1]
+                    break;
+                case 7: //[0,-1]
+                    Robot.y++;
+                    break;
+                case 8: //[1,-1]
+                    break;
+                default:
+                    break;
             }
-            breakPoints++; 
+            Robot.change = true;
         }
-        //concat newWay into one triplet-array
-        let pathWay = [];
-        for (let k = 0; k < newWay.length; k++) {
-            pathWay = pathWay.concat(newWay[k]);
-        }
-        newWay = pathWay;
-
-        //clear away the same points "in row" from array
-        for (let i = 0; i < newWay.length; i++) {
-            for (let j = 0; j < newWay.length - 1; j++) {
-                if (newWay[i][0] != newWay[j][0] && newWay[i][1] != newWay[j][1]) { break; }
-                else {
-                    newWay[j][0] = -1;//change the same points value to -1
-                    newWay[j][1] = -1;
-                }
-            }
-        }
-        let a, k = 0;
-        pathWay = [];
-        for (let i = 0; i < newWay.length - 1; i++) {
-            for (let j = 0; j < newWay.length - 1; j++) {
-                a = newWay.shift();
-                if (a[0] > -1, a[1] > -1) {
-                    pathWay[k++] = a; //clear all the -1's out of the path;
-                }
-            }
-        }
-        return [pathWay.length, pathWay];
     }
-    */
 
-/*
-    function generatePath(AP, GP, len, limit) { //v1.0
-        len += 1; 
-        let vPath = [[],[],[]];
-        let value;
-        let minIdx = -1;
-        let Val = -5;
-        let res = -5;
-        if (len > limit) {
-            img[AP[1] * mapImageW + AP[0]] = 0;
-            value = -5;
-            return [value, null];
-        }  
-        drawAnyPoint(AP, "#FF0000");  
-                  
-        let dir = [GP[0] - AP[0], GP[1] - AP[1]]; //direction vector
-        let a = [dir[0] / Math.sqrt(dir[0]**2 + dir[1]**2), dir[1] / Math.sqrt(dir[0]**2 + dir[1]**2)];
-        a = [Math.round(a[0]), Math.round(a[1])]; //normalized dir. vector
-        let NP = [AP[0] + a[0], AP[1] + a[1] , 0]; //next point on dir. vect.
-        Val = img[NP[1] * mapImageW + NP[0]]; //value of point in the map at next point loc.
-        if (NP[0] == GP[0] && NP[1] == GP[1]) { //if next point is a goal            
-            vPath[0][value] = NP[0];    //x
-            vPath[1][value] = NP[1];    //y
-            vPath[2][value] = NP[2];    //pathWeightVal
-            value = 1;
-            return [value, vPath];
-        }
-        else if (Val == 0 || Val == undefined) {
-            img[NP[1] * mapImageW + NP[0]] = 3;
-            res = generatePath(NP, GP, len, limit);
-            let resultValue = res[0];
-            if (resultValue > 0) {                
-                vPath = res[1];
-                vPath[0][resultValue] = NP[0];   
-                vPath[1][resultValue] = NP[1];   
-                vPath[2][resultValue] = NP[2];
-                value = resultValue + 1;
-                img[NP[1] * mapImageW + NP[0]] = 0;
-                drawAnyPoint(NP, "#00FF00"); 
-                return [value, vPath];
-            }
-            else if (resultValue == -5) {
-                vPath = -1;
-                value = -5;
-                img[NP[1] * mapImageW + NP[0]] = 0;
-                return [value, vPath];
-            }
-            else if (resultValue == -1) {
-                img[NP[1] * mapImageW + NP[0]] = 3;
-            }
-        }
-        let dirValue = [];
-        let dirPath = [];
-
-        for (let i = 0; i < fid.length; i++) {
-            let fi = (3.14 / 180) * fid[i];
-            let r = [Math.cos(fi), -Math.sin(fi), Math.sin(fi), Math.cos(fi)];
-            let pos = matrixMull(r, [2, 2], a, [1, 2]);
-            NP[0] = AP[0] + Math.round(pos[0], 1);
-            NP[1] = AP[1] + Math.round(pos[1], 1);
-            if (NP[0] < 0 || NP[0] > mapImageW || NP[1] < 0 || NP[1] > mapImageH || NP == AP) {
-                dirValue[i] = -1;
-                continue;
-            }
-            Val = img[NP[1] * mapImageW + NP[0]]; //value of point in the map at next point loc.
-            if (NP[0] == GP[0] && NP[1] == GP[1]) { //if next point is a goal
-                dirValue[i] = 1;
-                dirPath[i][0][dirValue[i]] = NP[0];    //x
-                dirPath[i][1][dirValue[i]] = NP[1];    //y
-                dirPath[i][2][dirValue[i]] = NP[2];    //weight
-                return [value, dirPath[i]];
-            }
-            else if (Val == 1 || Val == 2) {
-                dirValue[i] = -1;                
-                continue;
-            }
-            else if (Val == 0 || Val == undefined) {
-                img[NP[1] * mapImageW + NP[0]] = 3;                
-                res = generatePath(NP, GP, len, limit);
-                drawAnyPoint(NP, "#0000FF"); 
-                let resultValue = res[0];
-                if (resultValue > 0) {
-                    dirValue[i] = resultValue;
-                    dirPath[i] = res[1];
-                    dirPath[i][0][dirValue[i]] = NP[0];    //x
-                    dirPath[i][1][dirValue[i]] = NP[1];    //y
-                    dirPath[i][2][dirValue[i]] = NP[2];    //weight
-                    dirValue[i] = resultValue + 1;
-                    img[NP[1] * mapImageW + NP[0]] = 0;
-                    //return [value, path];
-                }
-                else if (resultValue == -5) {                    
-                    dirValue[i] = -5;
-                    img[NP[1] * mapImageW + NP[0]] = 0;
-                    //return [value, path];
-                }
-                else if (resultValue == -1) {
-                    img[NP[1] * mapImageW + NP[0]] = 0;
-                }
-            }
-        }
-
-        for (let i = 0; i < dirValue.length; i++) {
-            let minValue = 10000;            
-            if (dirValue[i] > 0 && dirValue[i] < minValue && dirValue[i] != null ) {
-                minValue = dirValue;
-                minIdx = i;
-            }
-        }
-
-        if (minIdx < 0) {
-            return [-5, -1];
-        }
-        drawAnyPoint(NP, "#0000FF"); 
-        return [dirValue[minIdx], dirPath[minIdx]];
-    }
-    */
-
+});
