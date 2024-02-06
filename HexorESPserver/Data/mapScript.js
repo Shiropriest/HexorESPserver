@@ -65,6 +65,12 @@ document.addEventListener("DOMContentLoaded", () => {
     let mapImageH, mapImageW; //size of map defined by user or
     //binary represantation of map in string recieved from ESP server 
     let img, genMesh = false, pathGenerated = false;
+    let mapColors = {
+        path: "#c7fe0c", cornerPoints: "#682dfa", robot: "#f89b06", target: "#00FF00",
+        obstacles: "#1d1c1c", workspace: "#565656", pathTouched: "#111111",
+        pointVal2: "#565656", highlightedPoint: "#FF0000", triedPath: "#70ff00",
+        beforeOptimalization: "#FF00FF", freeSpace: "#f0f0f0", pointVal3: "#0f0f0f"
+    };
 
     //debugging purpose variables:
     let runningOnServer = false;
@@ -281,7 +287,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     infoBut.addEventListener("click", () => {
         mapMode = mapModes[2];
-        modeChange();
+        modeChange();        
     });
 
     idxInPath.addEventListener("change", () => {
@@ -297,7 +303,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (path[0] == undefined || drawPathIdx > Number(pathLength.innerHTML)-1) {
             return;
         }
-        drawAnyPoint(path[drawPathIdx++], "#FF0000");
+        drawAnyPoint(path[drawPathIdx++], mapColors.highlightedPoint);
         drawPathIdx = drawPathIdx < Number(pathLength.innerHTML)-1 ? drawPathIdx : 0;
         idxInPath.value = drawPathIdx;
     });
@@ -366,6 +372,8 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }        
 
+        drawLegend();
+
         if (!runningOnServer) {
             //context.drawImage(mapImage, startScrollX, startScrollY, mapImageW * scaleW, mapImageH * scaleH);
         }
@@ -412,7 +420,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     console.log(err.message);
                     res1[0] = -1;
                 }
-                //DrawPath(res[0], res[1],"#FF0000");
                 if (res[0] > 0 && res[0] < res1[0]) {
                     v = res[0];
                     path = flipArray(res[1]);
@@ -455,7 +462,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                     //DrawPath(r1[1].length, r1[1], "#70ff00");
                                     //only if there is point from which we can get to end we check that we can get from start to the mesh point                                    
                                     arrayOfGenPaths[k] = pathJoin(flipArray(r2[1]), flipArray(r1[1]));
-                                    DrawPath(arrayOfGenPaths[k].length, arrayOfGenPaths[k++], "#70ff00");
+                                    DrawPath(arrayOfGenPaths[k].length, arrayOfGenPaths[k++], mapColors.triedPath);
                                 }
                             }
                         }
@@ -486,7 +493,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 path = pathJoin([[Robot.x, Robot.y, 1]], path);
                 path = pathJoin(path, [[Target.x, Target.y, 1]]);
 
-                DrawPath(v, path, "#FF00FF");
+                DrawPath(v, path, mapColors.beforeOptimalization);
 
                 clearMap();
                 res = optimizePath(v, path, pathDirection, [Robot.x, Robot.y], [Target.x, Target.y]);                
@@ -499,7 +506,6 @@ document.addEventListener("DOMContentLoaded", () => {
             }
             if (pathGenerated) {
                 DrawPath(v, path);
-                //DrawPath(v, path, "#FF00FF");
                 
             }
             else {
@@ -512,7 +518,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (Target.x > mapImageW || Target.x < 0 || Target.y > mapImageH || Target.y < 0) {
             Target.valid = false;
         }
-        context.fillStyle = Target.valid ? "#00FF00" : "#FF0000";
+        context.fillStyle = Target.valid ? mapColors.target : mapColors.highlightedPoint;
 
         locX1 = (Target.x * scaleW) + startScrollX;
         locY1 = (Target.y * scaleH) + startScrollY;
@@ -527,7 +533,7 @@ document.addEventListener("DOMContentLoaded", () => {
             Robot.valid = false;
         }
 
-        context.fillStyle = Robot.valid ? "#f89b06" : "#FF0000";
+        context.fillStyle = Robot.valid ? mapColors.robot : mapColors.highlightedPoint;
 
         locX1 = (Robot.x * scaleW) + startScrollX;
         locY1 = (Robot.y * scaleH) + startScrollY;
@@ -535,7 +541,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         let rob = document.getElementById("koordsAct");
         rob.innerHTML = "Robot: " + + locX2 + ", " + locY2 + ", ?";
-        context.fillStyle = "#ff000";
+        //context.fillStyle = "#ff000";
     };
 
     function drawImageFromPoints() {
@@ -552,23 +558,23 @@ document.addEventListener("DOMContentLoaded", () => {
                 y = startScrollY + r * sizeY;
                 switch (img[r * mapImageW + c]) {
                     case 0: //free space
-                        context.fillStyle = "#f0f0f0";
+                        context.fillStyle = mapColors.freeSpace;
                         break;
                     case 1: //object
-                        context.fillStyle = "#1d1c1c";
+                        context.fillStyle = mapColors.obstacles;
                         break;
                     case 2: //object's distance radius
-                        context.fillStyle = "#565656";
+                        context.fillStyle = mapColors.workspace;
                         //debuging color
                         //context.fillStyle = "#2d0ff5";
                         break;
                     case 3: //object's distance radius
-                        context.fillStyle = "#111111";
+                        context.fillStyle = mapColors.pathTouched;
                         //debuging color
                         //context.fillStyle = "#2d0ff5";
                         break;
                     default:
-                        context.fillStyle = "#f0f0f0";
+                        context.fillStyle = mapColors.freeSpace;
                         img[r * mapImageW + c] = 0;
                         break;
                 }
@@ -589,18 +595,18 @@ document.addEventListener("DOMContentLoaded", () => {
                         color = col;
                         break;
                     }
-                    color = "#c7fe0c";
+                    color = mapColors.path;
                     break;
                 case 1: //special point
-                    color = "#682dfa";
+                    color = mapColors.cornerPoints;
                     break;
-                case 2: 
-                    color = "#565656";
+                case 2:
+                    color = mapColors.pointVal2;
                     break;
                 case 3:
-                    color = "#0f0f0f";
+                    color = mapColors.pointVal3;
                 default:
-                    color = "#f0f0f0";
+                    color = mapColors.highlightedPoint;
                     break;
             }
             drawAnyPoint(path[i], color);      
@@ -666,6 +672,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function modeChange() {
+        drawLegend();
         switch (mapMode) {
             case mapModes[0]:
                 canvas.style.cursor = "grab";
@@ -699,7 +706,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 mapMode = mapModes[0];
                 modeChange();
                 break;
-        }
+        }        
     }
 
     function generateWorkSpace(img1) {
@@ -974,6 +981,38 @@ document.addEventListener("DOMContentLoaded", () => {
         } 
         return im;
     }
+
+    function drawLegend() {
+        let pH = document.getElementById("pHcl1b");
+        let d = document.getElementById("legend");
+        if (mapMode != mapModes[2]) {
+            
+            if (d != undefined) {
+                pH.removeChild(d);
+            }
+            return;
+        }
+        if (d == undefined) {
+            let div = document.createElement("div");
+            let legendH2 = document.createElement("h2");
+            legendH2.innerHTML = "Legend for map";
+            let list = document.createElement("ul");
+            for (let colors in mapColors) {
+                let item = document.createElement("li");
+                item.innerHTML = colors;
+                item.style.textShadow = "0px 0px 5px #000000";            
+                item.style.color = mapColors[colors];
+
+                list.appendChild(item);
+            }
+            list.style.marginTop = "1px";
+            div.appendChild(legendH2);
+            div.appendChild(list);
+            div.style.overflow = "hidden";
+            div.id = "legend";
+            pH.appendChild(div);
+        }        
+    } 
 
     //functions for testing
     function testingButtonMovement() {

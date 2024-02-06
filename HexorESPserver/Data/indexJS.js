@@ -107,7 +107,6 @@ function handleResize(e) {
         const offset = (e.clientX/document.body.clientWidth)*100;
         column2.style.width = (100-offset) + '%';
         column1.style.width = offset + '%';
-        draw();
     }
 }
 
