@@ -18,7 +18,7 @@ document.addEventListener("DOMContentLoaded", () => {
      * TODO:
      * 1) info button -> color legend & more
      * 2) saving map to cookies or other temp PC/phone memmory
-     * 3) 
+     * 3) add touchscreen compatibility 
      */
 
     //DOM objects
@@ -77,7 +77,7 @@ document.addEventListener("DOMContentLoaded", () => {
     //# in setKeys array for setting a keybinding TODO - share with page JS
     const forward = 0,
         back = 1,
-        left = 2,
+        left = 2,    
         right = 3,
         stop = 4,
         mode1 = 5, //teleoprator
@@ -293,7 +293,7 @@ document.addEventListener("DOMContentLoaded", () => {
         drawPathIdx = 0;
     });
 
-    drawPoint.addEventListener("click", () => {
+    drawPoint.addEventListener("click", () => {        
         if (path[0] == undefined || drawPathIdx > Number(pathLength.innerHTML)-1) {
             return;
         }
@@ -364,16 +364,14 @@ document.addEventListener("DOMContentLoaded", () => {
             clearInterval(tim);
             tim = setTimeout(draw, 2000);
             return;
-        }
-        
-        context.clearRect(0, 0, canvas.width, canvas.height);
-        maxVectorLen = Math.sqrt(mapImageH ** 2 + mapImageW ** 2);
+        }        
 
         if (!runningOnServer) {
             //context.drawImage(mapImage, startScrollX, startScrollY, mapImageW * scaleW, mapImageH * scaleH);
         }
         //draw img at shifted plane in selected zoom scale
-       
+
+        maxVectorLen = Math.sqrt(mapImageH ** 2 + mapImageW ** 2);
         drawImageFromPoints();
         Goal = document.getElementById("koordsGoal");
         Goal.innerHTML = "Cíl: ";
@@ -397,16 +395,18 @@ document.addEventListener("DOMContentLoaded", () => {
                 //newTryOutPoints = [];
                 let res = [], res1 = [];
                 try {
-                    res = generatePath([Robot.x, Robot.y, 0], [Target.x, Target.y, 0], 0) //AP, GP, len, limit;
                     clearMap();
+                    res = generatePath([Robot.x, Robot.y, 0], [Target.x, Target.y, 0], 0) //AP, GP, len, limit;
+                    
                 }
                 catch (err) {
                     console.log(err.message);
                     res[0] = -1;
                 }
                 try {
-                    res1 = generatePath([Target.x, Target.y, 0], [Robot.x, Robot.y, 0], 0);
                     clearMap();
+                    res1 = generatePath([Target.x, Target.y, 0], [Robot.x, Robot.y, 0], 0);
+                    
                 }
                 catch (err) {
                     console.log(err.message);
@@ -422,44 +422,54 @@ document.addEventListener("DOMContentLoaded", () => {
                     path = res1[1];
                 }
                 else if (res[0] < 0 && res1[0] < 0) {
-                    //trying point mesh pathfinding
-                    /* in mesh made by 10*smaller map (every 10x10 pixels there is one point)
-                     * finding path in this setup by vector simplyfication
-                     * if there is path between two points selected by rounding direction vector between start & target 
-                     * 
-                     * 
-                     */
-                    try {                         
-                        let r1 = [], r2 = [], po = [], pointMesh = [], arrayOfGenPaths = [], k = 0;                 //[x,y, basic validity]
+                    /* trying point mesh pathfinding
+                     * in mesh made by x*smaller map (every x by x pixels there is one "point")
+                     * finding path in this setup by path finding function 
+                     * trying every point in this mesh if it is reachable by robot and if there is path from it to the target
+                     * because there will probably be more than just one point that fulfill these conditions we must select just the shortest one from them
+                     * POSIBILITY TO IMPROVE:
+                     * if we have enough computing power we should probably try to siplify all the paths and then select the shortest one.
+                     */                      
+                        let r1 = [], r2 = [], po = [], pointMesh = [], arrayOfGenPaths = [[]], k = 0;                 //[x,y, basic validity]
                         for (let i = downSizing; i < mapImageH; i += downSizing) {
                             for (let j = downSizing; j < mapImageW; j += downSizing) {
                                 po = [j, i, 0];
-                                r1 = generatePath(po, [Target.x, Target.y], 0);                                     //point from mesh to end
-                                clearMap();                                    
-                                r2 = generatePath([Robot.x, Robot.y], po, 0);                                       //from robot to mesh point
+                                clearMap(); 
+                                try {
+                                    r1 = generatePath(po, [Target.x, Target.y], 0);
+                                }
+                                catch (err) {
+                                    console.log(err.message);   //point from mesh to end
+                                    continue;
+                                }
+                                                                   
+                                clearMap();   
+                                try {
+                                    r2 = generatePath([Robot.x, Robot.y], po, 0); //from robot to mesh point
+                                }
+                                catch (err) {
+                                    console.log(err.message);   //point from mesh to end
+                                    continue;
+                                }                                                                      
                                 if (r1[0] > 0 && r2[0] > 0) {
                                     //DrawPath(r1[1].length, r1[1], "#70ff00");
-                                    //only if there is point from which we can get to end we check that we can get from start to the mesh point                                
-                                    arrayOfGenPaths[k++] = pathJoin(r2[1], r1[1]);
-                                    DrawPath(r2[1].length, r2[1], "#70ff00");
-                                    
+                                    //only if there is point from which we can get to end we check that we can get from start to the mesh point                                    
+                                    arrayOfGenPaths[k] = pathJoin(flipArray(r2[1]), flipArray(r1[1]));
+                                    DrawPath(arrayOfGenPaths[k].length, arrayOfGenPaths[k++], "#70ff00");
                                 }
                             }
                         }
                         let p = (mapImageW * mapImageH)**2, idx = 0;
                         for (let i = 0; i < arrayOfGenPaths.length; i++) {
-                            if (arrayOfGenPaths[i][0] < p && arrayOfGenPaths[i][0] > 0) {
+                            if (arrayOfGenPaths[i].length < p) {
                                 idx = i;
-                                p = arrayOfGenPaths[i][0];
+                                p = arrayOfGenPaths[i].length;
                             }
                         }
-                        v = arrayOfGenPaths[idx][0];
-                        path = arrayOfGenPaths[idx][1];
-                    }
-                    catch (err) {
-                        console.log(err.message);
-                        v = -1; path = [0];
-                    }
+                        v = arrayOfGenPaths[idx].length;
+                        path = arrayOfGenPaths[idx];
+                    
+                    
                     //finding shortes combined path
                     
                 }
@@ -478,8 +488,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 DrawPath(v, path, "#FF00FF");
 
-                res = optimizePath(v, path, pathDirection, [Robot.x, Robot.y], [Target.x, Target.y]);
-                //res = optimizePath(res[0], res[1], pathDirection, [Robot.x, Robot.y], [Target.x, Target.y]);
+                clearMap();
+                res = optimizePath(v, path, pathDirection, [Robot.x, Robot.y], [Target.x, Target.y]);                
                 v = res[0];
                 path = res[1];
                 pathGenerated = v > 0 ? true : false;
@@ -531,6 +541,8 @@ document.addEventListener("DOMContentLoaded", () => {
     function drawImageFromPoints() {
         let sizeX = pixelSize * scaleW, sizeY = pixelSize * scaleH;
         let x = startScrollX;
+
+        context.clearRect(0, 0, canvas.width, canvas.height);
         if (change) {
             img = generateWorkSpace(img);
         }
@@ -547,6 +559,11 @@ document.addEventListener("DOMContentLoaded", () => {
                         break;
                     case 2: //object's distance radius
                         context.fillStyle = "#565656";
+                        //debuging color
+                        //context.fillStyle = "#2d0ff5";
+                        break;
+                    case 3: //object's distance radius
+                        context.fillStyle = "#111111";
                         //debuging color
                         //context.fillStyle = "#2d0ff5";
                         break;
@@ -930,11 +947,10 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         if (p[i][0] == undefined || p[i][1] == undefined) {
             continue;
-        }
-
+        }        
         a[k++] = p[i];
         if (p[i][2] == undefined) {
-            a[k][2] = 0;
+            a[k-1][2] = 0;
         }        
     }
     return [a.length, a];
