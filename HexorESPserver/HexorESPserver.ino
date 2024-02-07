@@ -23,6 +23,7 @@
 #include "string.h"
 #include "WiFi.h"
 */
+#include "communication.h"
 #include <AsyncTCP.h>
 //#include <FS.h>
 #include "WiFi.h"
@@ -34,6 +35,7 @@
 #include <Wire.h>
 #include <SPI.h>
 #include <esp32-hal-i2c.h>
+#include "communication.h"
 
 
 /*--------------- defines ---------------*/
@@ -41,6 +43,9 @@
 #define SDA_PIN 21
 #define SCL_PIN 22
 #define I2C_FREQ 400000U
+//UART
+#define RX2 16
+#define TX2 17
 
 /*--------------- glob. variables ---------------*/
 //web server
@@ -51,11 +56,14 @@ const char* pass = "VzduchovkaHMI";
 int i2cDevices[128];
 int i2cDevCounter = 0;
 
+//UART
+HardwareSerial UART2(2);
+
 /*--------------- Map array def ---------------*/
 #define mapSizeX 100
 #define mapSizeY 100
 String mapArray;
-bool map[mapSizeX][mapSizeY];
+bool mapOfSurroundings[mapSizeX][mapSizeY];
 
 
 /*--------------- user defined web preproc. ---------------*/
@@ -78,7 +86,7 @@ void mapToString() {
 	{
 		for (int c = 0; c < mapSizeX; c++)//colons
 		{
-			mapArray += map[r][c] == true ? "1" : "0";
+			mapArray += mapOfSurroundings[r][c] == true ? "1" : "0";
 		}
 	}
 }
@@ -140,21 +148,11 @@ void setup() {
 		request->send(200, "text/plain", mapArray);
 		});
 
-
-
-	//i2c startup unnecesary because it wont be there probably
-	/*
-		Wire.setPins(SDA_PIN, SCL_PIN);
-		Wire.setClock(I2C_FREQ);
-		if (!Wire.begin()) {
-			Serial.println("I2C start error!");
-		}
-	*/
-
-
+	//UART
+	UART2.begin(115200, SERIAL_8N1, RX2, TX2);
+	
 	server.begin();
 
-	lookUpI2Cdevices();
 }
 
 void index(AsyncWebServerRequest* r) {
@@ -184,6 +182,7 @@ void lookUpI2Cdevices() {
 		}
 	}
 }
+
 
 // the loop function runs over and over again until power down or reset
 void loop() {

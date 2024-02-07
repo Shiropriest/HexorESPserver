@@ -730,7 +730,7 @@ document.addEventListener("DOMContentLoaded", () => {
         change = false;
         return WSmap;
     }
-
+    
     function drawAnyPoint( p , col) {
         let sizeX = pixelSize * scaleW, sizeY = pixelSize * scaleH;
         context.fillStyle = col;
