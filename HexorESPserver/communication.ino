@@ -2,7 +2,7 @@
   ******************************************************************************
   * @file    communication.c
   * @author  Jan Kredba  * 
-  * @edit&ConverForESP	Tomas Hmiro
+  * @edit&ConversionForESP for Arduino IDE Tomas Hmiro
   * @version 0.2
   * @date    28-April-2016
   * @brief   Communication support
@@ -32,8 +32,7 @@ static uint32_t hb12c_receiveCount = 0;
 static uint8_t completeFrameReceived = 0;
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
-void hb12c_buildOutFrame(uint16_t command, uint8_t data[], uint32_t dataLength, uint16_t address, uint8_t out_frame[])
-{
+void hb12c_buildOutFrame(uint16_t command, uint8_t data[], uint32_t dataLength, uint16_t address, uint8_t out_frame[]) {
 	int i;
 	uint8_t checksum = 0;
 	uint8_t outFrameLength = 12 + dataLength;
@@ -61,16 +60,14 @@ void hb12c_buildOutFrame(uint16_t command, uint8_t data[], uint32_t dataLength, 
 	packetID++;
 }
 
-void hb12c_buildAckFrame(uint16_t IDpacket, uint16_t address, uint8_t out_frame[])
-{
+void hb12c_buildAckFrame(uint16_t IDpacket, uint16_t address, uint8_t out_frame[]) {
 	uint8_t ackPacketID[2];
 	ackPacketID[0] = (uint8_t)(IDpacket & 0x00FF);
 	ackPacketID[1] = (uint8_t)((IDpacket >> 8) & 0x00FF);
 	hb12c_buildOutFrame(ACK_COMMAND, ackPacketID, 2, address, out_frame);
 }
 
-HB12C_Result_type hb12c_checkReceivedFrame(void)
-{
+HB12C_Result_type hb12c_checkReceivedFrame(void) {
 	int i = 0;
 	uint8_t frameChecksum = hb12c_receiveBuffer[(hb12c_receiveStartIndex + 7) % HB12_C_MAX_LENGTH];
 	uint8_t calculatedChecksum = 0;
@@ -83,8 +80,7 @@ HB12C_Result_type hb12c_checkReceivedFrame(void)
 	return HB12C_OK;
 }
 
-HB12C_Result_type hb12c_checkReceivedData(void)
-{
+HB12C_Result_type hb12c_checkReceivedData(void) {
 	if (hb12c_receiveCount > HB12_C_MAX_LENGTH) hb12c_receiveCount = 0;
 	if (hb12c_receiveCount > 3 && hb12c_receiveExpectedLength == 0)
 	{
@@ -120,14 +116,12 @@ HB12C_Result_type hb12c_checkReceivedData(void)
 	return HB12C_NOT_COMPLETED;
 }
 
-void hb12c_addReceivedByte(uint8_t receivedByte)
-{
+void hb12c_addReceivedByte(uint8_t receivedByte) {
 	hb12c_receiveBuffer[(hb12c_receiveStartIndex + hb12c_receiveCount) % HB12_C_MAX_LENGTH] = receivedByte;
 	hb12c_receiveCount++;
 }
 
-HB12C_Result_type hb12c_getReceivedPacket(Packet_structure* packet)
-{
+HB12C_Result_type hb12c_getReceivedPacket(Packet_structure* packet) {
 	if (completeFrameReceived)
 	{
 		int i;

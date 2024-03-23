@@ -19,3 +19,7 @@
     max-height: 100%;
     user-select: none;
 }
+
+body {
+    font-family: Arial, sans-serif;
+}

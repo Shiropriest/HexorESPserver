@@ -15,18 +15,20 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="HexorESPserver.ino" />
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="__vm\.HexorESPserver.vsarduino.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="communication.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="HexorBot.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="communication.c">
+    <ClCompile Include="HexorESPserver.ino" />
+    <ClCompile Include="communication.ino" />
+    <ClCompile Include="HexorBot.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

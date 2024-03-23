@@ -22,7 +22,7 @@
 
 #include "stdint.h"
 
-  /* Exported types ------------------------------------------------------------*/
+/* Exported types ------------------------------------------------------------*/
 typedef enum __Result_types {
 	HB12C_OK = 0,
 	HB12C_CHECKSUM_ERROR,
@@ -38,6 +38,22 @@ typedef struct __packet {
 	uint8_t* data;
 	uint32_t dataLength;
 } Packet_structure;
+
+typedef enum {
+	STOP = (uint8_t)0,
+	FWD,
+	LEFT,
+	RIGHT,
+	BACK
+}_bot_move_commands;
+
+typedef enum {
+	STOP_TAIL = (uint8_t)0,
+	UP,
+	LEFT_TAIL, 	//same for bot
+	RIGHT_TAIL,	//same for bot
+	DOWN
+}_tail_move_commands;
 
 /* Exported constants --------------------------------------------------------*/
 
