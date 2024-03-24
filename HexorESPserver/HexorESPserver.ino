@@ -56,11 +56,12 @@ int stateLed = LED_BUILTIN;
 #define UART_BUFF_SIZE RX_BUF_SIZE
 #define TXD_PIN (GPIO_NUM_4)
 #define RXD_PIN (GPIO_NUM_5)
-#define SEND_TIME_OFFSET 10 //in ms
+#define SEND_TIME_OFFSET 20 //in ms
 uint8_t dataToSend[RX_BUF_SIZE];// = "";
-bool someDataRecievedFlag = false;
+bool _someDataRecievedFlag = false;
 bool tryToRecieveData = false;
 int lastIndex = 0;
+bool _resetIdxFlag = false;
 int msgStartIdx = -1; //intentionaly index out of the array size
 
 uint8_t dataBytes[UART_BUFF_SIZE]; //full buffer byte array
@@ -184,19 +185,29 @@ static void tx_task(void* arg) {
 }
 
 static void rx_task(void* arg) {
-	static const char* RX_TASK_TAG = "RX_TASK";
-	esp_log_level_set(RX_TASK_TAG, ESP_LOG_INFO);
+	/*static const char* RX_TASK_TAG = "RX_TASK";
+	esp_log_level_set(RX_TASK_TAG, ESP_LOG_INFO);*/
 	uint8_t* data = (uint8_t*)malloc(RX_BUF_SIZE);
 	while (1) {
-		const int rxBytes = uart_read_bytes(UART_NUM_1, data, RX_BUF_SIZE, 1000 / portTICK_PERIOD_MS);
+		const int rxBytes = uart_read_bytes(UART_NUM_1, data, RX_BUF_SIZE, 1000*portTICK_PERIOD_MS);
 		if (rxBytes > 0) {
 			data[rxBytes] = 0;
 			data_size = rxBytes;
-			memcpy(&dataBytes[0+lastIndex], data, rxBytes);
-			lastIndex += rxBytes;
-			ESP_LOGI(RX_TASK_TAG, "Read %d bytes: '%s'", rxBytes, data);
-			someDataRecievedFlag = true;
-			rx_time = micros();
+			/*if (_resetIdxFlag) {
+				lastIndex = 0;
+				_resetIdxFlag = false;
+			}*/
+			memcpy(&dataBytes[0 + lastIndex], &data[0], rxBytes);
+			/*
+			for (int i = 0; i < rxBytes; i++) {
+				dataBytes[i + lastIndex] = *(data + i);
+			}*/
+			if (lastIndex < RX_BUF_SIZE - 2 * rxBytes) {
+				lastIndex += rxBytes;
+			}
+			else lastIndex = 0;
+			
+			_someDataRecievedFlag = true;
 		}
 	}
 	free(data);
@@ -493,20 +504,18 @@ bool _networksAround(const char* SSID) {
 // the loop function runs over and over again until power down or reset
 void loop() { 
 	
-	if (someDataRecievedFlag) {	
+	if (_someDataRecievedFlag) {	
 	//on data receive	
 		if (startToEndRec(&dataBytes[0], &msgStartIdx) && msgStartIdx >=0  && msgStartIdx <= RX_BUF_SIZE) {
 			//if full msg is received and msg start index is within boundary
-			memcpy(&recMsg[0], &dataBytes[msgStartIdx], sizeof(bot_struct_t));
-			convertBytesToObject(&recMsg[0], &Hexor);
+			//memcpy(&recMsg[0], , sizeof(bot_struct_t));
+			convertBytesToObject(&dataBytes[msgStartIdx], &Hexor);
 			//Serial.printf("after receive %d\n", lastIndex);
-			lastIndex = 0;
-		}
-		
-		someDataRecievedFlag = false;
-		
+			_resetIdxFlag = true;
+
+		}		
+		_someDataRecievedFlag = false;
 	}
-	/*
 	Serial.println();
 	Serial.printf("mode %d ,", Hexor.mode);
 	Serial.println(dataBytes[0], BIN);
@@ -522,7 +531,7 @@ void loop() {
 	Serial.printf("posy %d\n", Hexor.position[1]);
 	Serial.printf("posr %d\n", Hexor.position[2]);
 	Serial.printf("bateryState %d\n", Hexor.batteryState);
-*/
+/**/
 	blinkSpeed = WiFi.status() == WL_CONNECTED ? BLINK_SLOW : BLINK_FAST;
 	ledState = millis() % blinkSpeed > 1 && millis() % blinkSpeed < blinkSpeed/4 ? true : false;
 

@@ -53,7 +53,7 @@ bool startToEndRec(uint8_t* dataBytes, int* msgStartIdx) {
 	for (int i = 0; i < ROBOT_UART_MSG_SIZE; i++) {
 		const char a = (char)*(dataBytes+i), b = (char)*(dataBytes + i+1);
 		if (a == startChar1 && b == startChar2) {
-			index = i;
+			index = i+2;
 		}
 		if (a == endChar1 && b == endChar2 && index >= 0) {
 			*msgStartIdx = index;
