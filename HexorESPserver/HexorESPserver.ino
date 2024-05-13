@@ -4,6 +4,14 @@
  Author:	Tomas Hmiro
 
  brief:		Program is dedicated to control HEXORII robot.
+			There may be newer version at https://github.com/Shiropriest/HexorESPserver
+			
+			This program was writen in VisualStudio with VisualMicro
+
+			In the Data folder there is webpage that can be uploaded to SPIFFS of ESP
+
+			(map inside offline version of page is created by me and it was compiled 
+			into binary string version inside matlab function)
 */
 
 /* ----------- includes --------------------*/
@@ -40,8 +48,8 @@
 
 /*--------------- glob. variables ---------------*/
 //web server
-const char* ssid = "Hmirovi";
-const char* pass = "VzduchovkaHMI";
+const char* ssid = "";
+const char* pass = "";
 String ssid_new, pass_new, ssid_old, pass_old, Wifis[WIFI_MEM];
 int numberofAPsAround = 0;
 
@@ -221,6 +229,18 @@ AsyncWebServer server(80);
 void setup() {
 	Serial.begin(115200);
 
+
+
+	Serial.println("bot_struct_size");
+	Serial.println(sizeof(bot_struct_t));
+	Serial.println(sizeof(int));
+	Serial.println(sizeof(uint16_t));
+	Serial.println(sizeof(uint8_t));
+	Serial.println(sizeof(float));
+	Serial.println(sizeof(bool));
+	Serial.println();
+
+
 	//actions objects init
 	operatorRights.req = false;
 
@@ -344,7 +364,7 @@ void parameterRequestHandle(AsyncWebServerRequest* r) {
 				r->send(200, "text/plain", String(Hexor.operator_n));
 			}
 			else if (p->name() == "position") {
-				r->send(200, "text/plain", String(Hexor.position[0]) + ';' + String(Hexor.position[1]));
+				r->send(200, "text/plain", String(Hexor.position[0]) + ';' + String(Hexor.position[1]) + ';' + String(Hexor.position[2]));
 			}
 			else if (p->name() == "WIFI") {
 				String res = splitForWifi(String(p->value().c_str()));
@@ -362,7 +382,7 @@ void parameterRequestHandle(AsyncWebServerRequest* r) {
 	}
 }
 
-void index(AsyncWebServerRequest* r) {	
+void index(AsyncWebServerRequest* r) {
 	//TODO add GET value reaction
 	int parameters = r->params();
 	for (int i = 0; i < parameters; i++)
@@ -383,6 +403,10 @@ void index(AsyncWebServerRequest* r) {
 					modeChange.req = true;
 					modeChange.value = val;
 				}
+				else {
+					move.req = false;
+					move.value = val;
+				}
 			}
 			else if (p->name() == "tail") {
 				int val = String(p->value().c_str()).toInt();
@@ -394,6 +418,10 @@ void index(AsyncWebServerRequest* r) {
 				else if (val <= mode4) {
 					modeChange.req = true;
 					modeChange.value = val;
+				}
+				else {
+					moveTail.req = false;
+					moveTail.value = val;
 				}
 			}
 			else if (p->name() == "actionEnd") {
@@ -502,8 +530,7 @@ bool _networksAround(const char* SSID) {
 
 
 // the loop function runs over and over again until power down or reset
-void loop() { 
-	
+void loop() {
 	if (_someDataRecievedFlag) {	
 	//on data receive	
 		if (startToEndRec(&dataBytes[0], &msgStartIdx) && msgStartIdx >=0  && msgStartIdx <= RX_BUF_SIZE) {
@@ -516,22 +543,8 @@ void loop() {
 		}		
 		_someDataRecievedFlag = false;
 	}
-	Serial.println();
-	Serial.printf("mode %d ,", Hexor.mode);
-	Serial.println(dataBytes[0], BIN);
-	Serial.printf("operator %d ,",Hexor.operator_n);
-	Serial.println(dataBytes[1], BIN);
-	Serial.printf("move %d\n", Hexor.move);
-	Serial.printf("moveTail %d\n", Hexor.moveTail);
-	//Serial.printf("numberOfScanAngles %d\n", Hexor.numberOfScanAngles);
-	Serial.printf("mag0 %f\n", Hexor.mag[0]);
-	Serial.printf("mag1 %f\n", Hexor.mag[1]);
-	Serial.printf("mag2 %f\n", Hexor.mag[2]);
-	Serial.printf("posx %d\n", Hexor.position[0]);
-	Serial.printf("posy %d\n", Hexor.position[1]);
-	Serial.printf("posr %d\n", Hexor.position[2]);
-	Serial.printf("bateryState %d\n", Hexor.batteryState);
-/**/
+
+	/**/
 	blinkSpeed = WiFi.status() == WL_CONNECTED ? BLINK_SLOW : BLINK_FAST;
 	ledState = millis() % blinkSpeed > 1 && millis() % blinkSpeed < blinkSpeed/4 ? true : false;
 
@@ -548,6 +561,9 @@ void loop() {
 	modeChange.en = operatorRights.act;
 	move.en = operatorRights.act && !moveTail.req;
 	moveTail.en = operatorRights.act && !move.req;
+	
+	move.act = move.en && move.req;
+	moveTail.act = moveTail.en && moveTail.req;
 
 	//if this device is operator then the values of HEXOR object can be rewriten else leave thas as is.
 	if (operatorRights.act) {
@@ -555,5 +571,24 @@ void loop() {
 		Hexor.moveTail = moveTail.act ? moveTail.value : STOP;
 	}
 
-	convertObjectToBytes(&dataToSend[0], &Hexor);
+	convertObjectToBytes(&dataToSend[0], &Hexor);	
+
+	/*
+	//testing the struct readout
+	Serial.println();
+	Serial.printf("mode %d ,", Hexor.mode);
+	Serial.println(dataBytes[0], BIN);
+	Serial.printf("operator %d ,",Hexor.operator_n);
+	Serial.println(dataBytes[1], BIN);
+	Serial.printf("move %d\n", Hexor.move);
+	Serial.printf("moveTail %d\n", Hexor.moveTail);
+	//Serial.printf("numberOfScanAngles %d\n", Hexor.numberOfScanAngles);
+	Serial.printf("mag0 %f\n", Hexor.mag[0]);
+	Serial.printf("mag1 %f\n", Hexor.mag[1]);
+	Serial.printf("mag2 %f\n", Hexor.mag[2]);
+	Serial.printf("posx %d\n", Hexor.position[0]);
+	Serial.printf("posy %d\n", Hexor.position[1]);
+	Serial.printf("posr %d\n", Hexor.position[2]);
+	Serial.printf("bateryState %d\n", Hexor.batteryState);
+	*/
 }

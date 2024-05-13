@@ -57,9 +57,11 @@ setKeys[mode3] = 'š';
 setKeys[mode4] = 'č';
 
 
+let value_TEST;
+
 //for slower loading of scripts
 let loadCount = 0;
-let arrayOfScriptToLoad = ["controlScript.js", "mapFcnScript.js", "mapFcn1Script.js", "mapFcn2Script.js", "mapScript.js"];
+let arrayOfScriptToLoad = ["navScript.js","controlScript.js", "mapFcnScript.js", "mapFcn1Script.js", "mapFcn2Script.js", "mapScript.js"];
 
 
 window.addEventListener("DOMContentLoaded", () => {
@@ -74,7 +76,7 @@ window.addEventListener("DOMContentLoaded", () => {
     column1Top = document.getElementById('column1-top');
     column1Bottom = document.getElementById('column1-bottom');
     column2 = document.getElementById('column2');
-
+    value_TEST = document.getElementById("testRot");
 
 
     column2.style.width = 80 + '%';
@@ -128,7 +130,7 @@ window.addEventListener("DOMContentLoaded", () => {
     modal1 = document.getElementById('myModal1');
     btnSett = document.getElementById('Button_settings');
     closeModalBtn1 = document.getElementsByClassName('close')[1];
-    confirmBtn1 = document.getElementById('confirmBtn1'); 
+    confirmBtn1 = document.getElementById('confirmBtnKeys'); 
     let keySet = [];
     keySet[stop] = document.getElementById('stop');
     keySet[forward] = document.getElementById('fwd');
@@ -186,9 +188,16 @@ window.addEventListener("DOMContentLoaded", () => {
         passToggle = !passToggle;
         inputField2.type = passToggle ? "text" : "password";
     });
-    
+
+    value_TEST.addEventListener("change", () => {
+    Robot.rot = value_TEST.value * 0.1 * 3.14;
+    console.log(Robot.rot);
+    });
 
 });
+
+
+
 function handleResize(e) {
     if (isResizing) {
         let dx = e.type.includes("touch") ? e.touches[e.touches.length - 1].clientX : e.clientX;

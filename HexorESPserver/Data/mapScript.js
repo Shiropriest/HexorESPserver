@@ -21,7 +21,7 @@
 * TODO:
 * 1) info button -> color legend & more
 * 2) saving map to cookies or other temp PC/phone memmory
-* 3) add touchscreen compatibility 
+* 3) add touchscreen compatibility - 1/2 (need to be tested)
 * 
 * 
 * This file contains script that takes care of canvas map most of them are just events and some actual functions are moved to another file
@@ -52,7 +52,7 @@ let mapMode = mapModes[0], lastMapMode; //default map mode
 //target position in native map coordinates (not affected by zoom or shift of map in canvas)
 //Structure to share with robot MCU
 let Target = { x: 0, y: 0, size: 1, en: false, valid: true, change: true, scaling: { H: 1, W: 1 } }; //Goal -> MCU
-let Robot = { x: 0, y: 0, size: 2, en: false, valid: true, change: true, scaling: { H: 1, W: 1 } };  //Start <- MCU
+let Robot = { x: 0, y: 0, rot: 450, rotI: 450, size: 2, en: false, valid: true, change: true, scaling: { H: 1, W: 1 } };  //Start <- MCU
 
 //Robot = JSON.parse(sessionStorage.getItem("RobotGlobal"));
 // = { x: 0, y: 0, size: 1, en: false, valid: true, change: true, scaling: { H: 1, W: 1 } };  //Start <- MCU

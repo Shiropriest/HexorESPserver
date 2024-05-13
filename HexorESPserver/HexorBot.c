@@ -19,7 +19,7 @@
   */
 
 #include "HexorBot.h" 
-const char startChar1 = '?', startChar2 = 's', endChar1 = '!', endChar2 = '&';
+const char startChar1 = '?', startChar2 = 's', endChar1 = '!', endChar2 = 'x';
 
 bot_response_t convertBytesToObject(uint8_t *bytes, bot_struct_t* b) {
 	union {

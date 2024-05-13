@@ -189,7 +189,14 @@ function DrawRobot() {
 
     locX1 = (Robot.x * scaleW) + startScrollX;
     locY1 = (Robot.y * scaleH) + startScrollY;
-    context.fillRect(locX1 - (Robot.size * scaleW) / 2, locY1 - (Robot.size * scaleH) / 2, Robot.size * scaleW, Robot.size * scaleH);
+    let lX1 = locX1 - (Robot.size * scaleW) / 2;
+    let lY1 = locY1 - (Robot.size * scaleH) / 2;
+    context.fillRect(lX1, lY1, Robot.size * scaleW, Robot.size * scaleH);
+    let pointSizeX = (Robot.size * scaleW)/ 8;
+    let pointSizeY = (Robot.size * scaleH)/ 8;
+
+    context.fillStyle = "#00ff00";
+    context.fillRect((lX1 + pointSizeX * 8) + (3 * Robot.size / 8) * Math.cos(Robot.rot + 3.14 / 2), (lY1 + pointSizeY*8)+ (3 * Robot.size / 8) * Math.cos(Robot.rot + 3.14 / 2), pointSizeX, pointSizeY);
 
     let rob = document.getElementById("koordsAct");
     rob.innerHTML = "Robot: " + + Robot.x + ", " + Robot.y + ", ?";
@@ -282,7 +289,8 @@ function mapOpDraw(e) {
         objGoal = document.getElementById("objGoal");
         objGoal.innerHTML = "Nová překážka na: " + locX2 + ", " + locY2;
         change = true;
-        drawOpObjPath[drawOpPathIdx++] = 1;            
+        drawOpObjPath[drawOpPathIdx++] = 1;
+        Target.change = true;
     }
     else if (e.button == mouseBtns.left) {
         context.fillRect(startScrollX + locX2 * scaleW, startScrollY + locY2 * scaleH, scaleW, scaleH);

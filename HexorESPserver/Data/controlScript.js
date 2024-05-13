@@ -181,7 +181,10 @@ function btnToDirection(btnName) {
 }
 
 function dirChange(_direction) {
-    direction = _direction < mode1 ? _direction : direction;
+
+    loggingFunction("buttonPress" + _direction);
+    direction = _direction < mode1 ? _direction : direction;    
+
     let dirBTNS = [2, 4, 5, 6, 8];
     for (let i = 0; i < dirBTNS.length; i++) {
         let k = document.getElementById("dirButton" + dirBTNS[i]);
@@ -211,7 +214,7 @@ function dirChange(_direction) {
             break;
     }
     let _mode = _direction >= mode1 ? _direction : robotMode;
-    robotModeChange(_mode);        
+    robotModeChange(_mode);  
 }
 
 function robotModeChange(mode) {
@@ -241,6 +244,10 @@ function robotModeChange(mode) {
             break;
     }
     sendModeCommand();
+    if (robotMode > mode3 && privilages == 1) {
+        setInterval();
+    }
+    
 }
 
 function sendDirCommand() {

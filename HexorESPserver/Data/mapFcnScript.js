@@ -12,6 +12,9 @@ functions for:
 */
 let batteryStateColour;
 let batteryPercentage;
+let privilages = 0;
+
+let testValue;
 function pushDown(e) {
     rect = canvas.getBoundingClientRect();
     W = (canvas.width / canvas.clientWidth);
@@ -78,7 +81,7 @@ function pushDown(e) {
                 draw();
             }
             else
-                Target.scaling.H = scaleH;
+            Target.scaling.H = scaleH;
             Target.scaling.W = scaleW;
             Target.x = Math.round(locX1, 1);
             Target.y = Math.round(locY1, 1);
@@ -254,10 +257,20 @@ function drawLegend() {
 
 //controls
 function refreshData() {
-    askForBatteryState();
-    askForPrivilages();
-    askForMode();
-    askForPosition();
+
+    
+
+    if (runningOnServer) {    
+        askForBatteryState();
+        askForPrivilages();
+        askForMode();
+        askForPosition();
+        askForObjectsAround();
+    }
+    else {
+
+    }
+    
     //column1Top.style.height = (45 +column1.style.width / column1Top.style.width) + '%';
     const battery = document.getElementById("battery");
     let stav = "linear-gradient(90deg," + batteryStateColour + " " + batteryPercentage + ", lightgrey 1%)";
@@ -269,7 +282,7 @@ function askForBatteryState() {
     text.onreadystatechange = function () {
         if (text.readyState == 4 && text.status == 200) {
             batteryPercentage = this.response + "%";
-            batteryStateColour = "#23ff01"; 
+            batteryStateColour = "#23ff01";
             if (this.response < 50) {
                 batteryStateColour = "#fb9405";
             }
@@ -279,6 +292,11 @@ function askForBatteryState() {
             else if (this.response == 0 || !runningOnServer) {
                 batteryStateColour = "#ae00ff"; //is this purple? no info about battery or disconected
             }
+        }
+        else if (text.status == 404 || text.status == 204) {
+            batteryStateColour = "#ae00ff";
+            //runningOnServer = false;
+            batteryPercentage = 80;
         }
     }
     text.open("GET", "/par?battery=&", true);
@@ -312,9 +330,22 @@ function askForPosition() {
         if (text.readyState == 4 && text.status == 200) {
             let response = 0;
             response = this.response.split(";");
-            Robot.x = response[0] == "" ? 50 : response[0] +50;
-            Robot.y = response[1] == "" ? 50 : response[1] +50;
+            //offset for this map system
+            Robot.x = response[0] == "" ? 50 : response[0] + 50;
+            Robot.y = response[1] == "" ? 50 : response[1] + 50;
+            if (Robot.rotI < 360) {
+                Robot.rot = response[2] - rotI;
+            }
+            else {
+                Robot.rotI = response[2];
+                Robot.rot = 0;
+            }
             Robot.en = true;
+        }
+        else if (text.status == 404 || text.status == 204) {
+            Robot.x = 50;
+            Robot.y = 50;
+            Robot.rot = testValue;
         }
     }
     text.open("GET", "/par?position=&", true);
